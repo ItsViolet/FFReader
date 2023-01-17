@@ -1,0 +1,16 @@
+{
+  "name": "novel-downloader",
+  "version": "3.0.0",
+  "description": "Downloads novels",
+  "main": "main.js",
+  "author": "gmastergreatee",
+  "license": "MIT",
+  "esversion": 11,
+  "dependencies": {
+    "electron": "^22.0.0",
+    "extract-zip": "^2.0.1",
+    "ffn-parser": "^0.0.7",
+    "follow-redirects": "^1.15.1",
+    "jsdom": "^20.0.3"
+  }
+}

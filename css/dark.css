@@ -1,0 +1,119 @@
+body {
+  background-color: #333333;
+}
+
+div {
+  color: white;
+  background-color: #333333;
+}
+
+a {
+  color: #5bc1ed;
+}
+
+a:active {
+  color: #ff4343;
+}
+
+a.disabled {
+  color: #707070;
+}
+
+input[type="text"],
+input[type="number"],
+textarea {
+  background-color: #4b4b4b;
+  color: white;
+}
+
+[placeholder]::placeholder {
+  color: #b0bd7a;
+}
+
+.bl {
+  border-left: 1px solid white;
+}
+
+.bl4 {
+  border-left: 4px solid white;
+}
+
+.bt {
+  border-top: 1px solid white;
+}
+
+.bt4 {
+  border-top: 4px solid white;
+}
+
+.br {
+  border-right: 1px solid white;
+}
+
+.bb {
+  border-bottom: 1px solid white;
+}
+
+::-webkit-scrollbar {
+  background: #000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #706e2b;
+  -webkit-border-radius: 1ex;
+  -webkit-box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.75);
+}
+
+::-webkit-scrollbar-corner {
+  background: #000;
+}
+
+div.new-updates,
+div.new-updates * {
+  /* border-color: lightgreen;
+  box-shadow: 0 0 20px 2px lightgreen; */
+  background-color: #404720;
+}
+
+div.updating,
+div.downloading {
+  z-index: 1;
+  border-color: lightgreen;
+  box-shadow: 0 0 20px 2px lightgreen;
+}
+
+div.updating,
+div.updating *,
+div.downloading,
+div.downloading * {
+  background-color: #2b782b;
+}
+
+div.detailing {
+  z-index: 2;
+  border-color: magenta;
+  box-shadow: 0 0 20px 2px magenta;
+}
+
+div.chapter-active {
+  border-color: greenyellow;
+  box-shadow: 0 0 20px 1px greenyellow;
+  background-color: black;
+}
+
+.cover-image img[alt]:after {
+  background-color: #333;
+}
+
+.goto-box,
+.update-box {
+  background-color: #3339;
+}
+
+.c-invert {
+  color: #333;
+}
+
+.c-invert.hover:hover {
+  color: #fff;
+}

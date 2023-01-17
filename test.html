@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Novel Downloader v3</title>
+    <link rel="stylesheet" href="./css/index.css" />
+    <script src="./js/vue.min.js"></script>
+    <script src="./js/index.js" defer></script>
+</head>
+
+<body>
+    <div id="main" class="dn h-100 w-100 fdc" :class="{ 'df': hasMounted }">
+        <link v-if="app_options.darkMode" rel="stylesheet" href="./css/dark.css" />
+        <div class="f1 fdc w-100" :class="{'df': !reading_mode, 'dn': reading_mode}">
+            <div class="df aic bb fwb">
+                <div class="df fdr f1 h-100 aic">
+                    <div class="fdr f1 h-100 aic" :class="{ 'df': showSideBar, 'dn': !showSideBar }">
+                        <a href="#" class="df h-100 aic px-8 py-4" :class="{ 'active-tab': app_options.activeTab == i }"
+                            v-for="(t, i) in tabs" @click="setActiveTab(i)">{{ t }}</a>
+                    </div>
+                </div>
+                <div class="df aic p-4">
+                    <a href="#" class="mx-4" :class="{ 'disabled': checkingForUpdates }" @click="checkForAppUpdates()"
+                        title="Update Fanfiction-Manager">
+                        {{ checkingForUpdates ? 'Checking for Updates...' : 'Update' }}</a>
+                    <a href="#" class="ml-8" @click="onToggleFullScreenClick()" title="Toggle FullScreen">TFS</a>
+                    <a href="#" class="ml-8" @click="toggleDarkMode()"
+                        :title="'Switch to ' + (app_options.darkMode ? 'Light' : 'Dark') + ' theme'">
+                        {{ app_options.darkMode ? 'LightMode' : 'DarkMode' }}</a>
+                    <a v-if="isTabActive('Rules')" href="#" class="ml-8" :class="{'disabled': iframe_working}"
+                        @click="updateRules()">{{ updatingRules ? 'Updating rules...' : 'Update Rules' }}</a>
+                    <div v-if="!isTabActive('Rules')" class="df fdr aic ml-8">
+                        <input type="checkbox" v-model="app_options.showWebPage" class="hwp20" />
+                        <a href="#" @click="toggleRenderer()">Renderer</a>
+                    </div>
+                </div>
+            </div>
+            <div class="df f1 fdr">
+
+                <!-- tabs code start -->
+
+                <div class="df fdc f1 oya pr">
+                    <div class="df fdc h-100 w-100 pa">
+                        <!-- library part start -->
+
+                        <div class="dn fdc f1 w-100" :class="{ 'df' : isTabActive('Library') }">
+                            <div class="df f1 fdc pr">
+
+                                <!-- Novels List Start -->
+
+                                <div class="df f1 pa w-100 h-100 oya p-4"
+                                    :class="{ 'lib-list': !app_options.showGridLayout, 'lib-thumbnail': app_options.showGridLayout }">
+                                    <div v-for="n in novels" class="m-8 bt bb bl br dn fdr p-8" :class="{
+                        'detailing': isDetailingMode(n), 
+                        'new-updates': n.ChapterCount > n.DownloadedCount,
+                        'downloading': n == d_novel,
+                        'updating': n == u_novel,
+                        'novel-summary-expanded': summaryExpandedGUID == n.GUID,
+                        'df': ((app_options.showNewOnly ? n.DownloadedCount < n.ChapterCount || n.ChapterCount <= 0 : true) && 
+                                (app_options.showCheckUpdatedOnly ? n.CheckUpdates : true)
+                              )
+                      }">
+                                        <div class="df pr-8 br pr cover-image">
+                                            <div class="df fdc pr">
+                                                <img class="bb bt bl br" :src="n.CoverURL" alt="Image Not Found">
+                                            </div>
+                                        </div>
+                                        <div class="f1 df fdc w-100 pl-8">
+                                            <div>
+                                                <span v-html="n.Title" class="fwb"></span> ({{ n.DownloadedCount }}/{{
+                                                n.ChapterCount }})
+                                            </div>
+                                            <div class="f1 bt mt-8 pt-8 pr">
+                                                <div :class="{'dn': !n.Summary, 'summary-shrunk': summaryExpandedGUID != n.GUID}"
+                                                    v-html="n.Summary">
+                                                </div>
+                                            </div>
+                                            <div class="bt mt-8 pt-8 df fdr fww jcsb">
+                                                <div>
+                                                    <a v-if="n.Summary" href="#" @click="setSummaryGUID(n.GUID)">{{
+                                                        summaryExpandedGUID ==
+                                                        n.GUID ? 'Shrink' :
+                                                        'Expand' }}</a>
+                                                </div>
+                                                <div class="f1 df fdr jce fww">
+                                                    <a href="#" class="ml-4" @click="enterReadingMode(n)">Read</a>
+                                                    <a href="#" class="ml-4" :class="{'disabled': iframe_working}"
+                                                        @click="viewNovelDetails(n)">Details</a>
+                                                    <a href="#" class="ml-4"
+                                                        :class="{'disabled': iframe_working || isDetailingMode(n), 'dn': !n.CheckUpdates || n == d_novel}"
+                                                        @click="updateNovel(n)">{{ u_novel == n ? 'Updating' : 'Update'
+                                                        }}</a>
+                                                    <a href="#" class="ml-4" :class="{
+                                'disabled': iframe_working || isDetailingMode(n),
+                                 'dn': n.ChapterCount <= n.DownloadedCount || n == d_novel
+                                }" @click="downloadNovel(n)">Download</a>
+                                                    <a href="#" v-if="n == d_novel" class="cr ml-4"
+                                                        :class="{'disabled': stop_download_update_novel}"
+                                                        @click="stopDownloadNovel()">{{
+                                                        stop_download_update_novel ? 'Stopping' : 'Stop' }}</a>
+                                                    <a href="#" class="ml-4"
+                                                        :class="{'disabled': iframe_working || isDetailingMode(n)}"
+                                                        @click="deleteNovel($event,n)">Delete</a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Novels List End -->
+
+                                <!-- No Novels Added Start -->
+
+                                <div v-if="getNovels.length == 0" class="df fdr h-100 w-100 jcc aic zi-1">
+                                    !~~~ {{loading_novels ?
+                                    'Loading Novels' :
+                                    (
+                                    this.novels.length > 0 ?
+                                    'No novels for the filters applied' :
+                                    'No novels added yet'
+                                    )
+                                    }} ~~~!
+                                </div>
+
+                                <!-- No Novels Added End -->
+
+                            </div>
+
+                            <!-- Novel Details Start -->
+
+                            <div v-if="detailing_novel" class="df fdc hp-300">
+                                <div class="df fdr bt p-4">
+                                    <div class="f1">Details</div>
+                                    <a href="#" @click="saveCloseNovelDetails()" class="mx-8">Save&Close</a>
+                                    <a href="#" @click="discardNovelDetailsChanges()" class="ml-8">Discard</a>
+                                </div>
+                                <div class="f1 bt pr">
+                                    <div class="df fdc pa w-100 h-100 oya">
+                                        <table class="w-100 p-4">
+                                            <tr>
+                                                <td class="wp-1">URL</td>
+                                                <td>
+                                                    <input type="text" v-model="detailing_novel.URL" class="w-100">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="wp-1">CoverURL</td>
+                                                <td>
+                                                    <input type="text" v-model="detailing_novel.CoverURL" class="w-100">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="wp-1">Title</td>
+                                                <td>
+                                                    <input type="text" v-model="detailing_novel.Title" class="w-100">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="wp-1 vat pt-4">Summary</td>
+                                                <td>
+                                                    <textarea v-model="detailing_novel.Summary"
+                                                        class="w-100 hp-100 rn"></textarea>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="wp-1 vat pt-4">CheckUpdates</td>
+                                                <td>
+                                                    <input type="checkbox" v-model="detailing_novel.CheckUpdates"
+                                                        class="hwp20" />
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Novel Details End -->
+
+                            <!-- Library Filters / Commands Start -->
+
+                            <div class="df fdr jcsb aic p-4 bt">
+                                <div class="df fdr aic">
+                                    <a href="#" @click="onToggleLibraryViewStyle()">
+                                        {{ app_options.showGridLayout ? 'ListView' : 'GridView' }}</a>
+                                    <input type="checkbox" class="hwp20 dib ml-8 cp" v-model="app_options.showNewOnly">
+                                    <a href="#" @click="toggleNewOnly()">NewOnly</a>
+                                    <input type="checkbox" class="hwp20 dib ml-8 cp"
+                                        v-model="app_options.showCheckUpdatedOnly">
+                                    <a href="#" @click="toggleCheckUpdatedOnly()">UpdatedOnly</a>
+                                </div>
+                                <div class="df fdr aic">
+                                    <a href="#" v-show="update_all_list.length <= 0"
+                                        :class="{ 'disabled': iframe_working }"
+                                        @click="updateDownloadAll()">UpdateDownloadAll</a>
+                                    <a href="#" v-show="update_all_list.length > 0"
+                                        :class="{ 'cr': !stop_download_update_novel, 'disabled': stop_download_update_novel }"
+                                        @click="stopDownloadAllNovel()">{{ stop_download_update_novel ? 'Stopping' :
+                                        'Stop'}}</a>
+                                </div>
+                            </div>
+
+                            <!-- Library Filters / Commands End -->
+
+                            <!-- Add Novel Start -->
+
+                            <div class="df bt fdr aic p-4">
+                                <div class="mr-4">URL :</div>
+                                <input class="f1 mr-4" type="text" v-model="add_novel_url"
+                                    placeholder="Enter the target URL of Novel-page here">
+                                <a href="#" :class="{'disabled': iframe_working}" @click="addNewNovel()">Load URL</a>
+                            </div>
+
+                            <!-- Add Novel End -->
+
+                        </div>
+
+                        <!-- library part end -->
+
+                        <!-- rules page start -->
+
+                        <div class="dn fdc f1 w-100" :class="{ 'df': isTabActive('Rules') }">
+                            <div v-for="r in rules" class="df fdr p-4 m-4 bt bl br bb">
+                                <div class="df fdr f1">
+                                    <div class="pr-4">{{ r.rule_name }} -></div>
+                                    <div class="df fdr f1 mr-10 pr">
+                                        <div class="f1 pa w-100 h-100 wsn toe oh">
+                                            {{ r.url_regex }}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <a href="#" :class="{'disabled': iframe_working}" @click="editRule(r)">Edit</a>
+                                    <a href="#" :class="{'disabled': iframe_working}"
+                                        @click="deleteRule($event, r)">Delete</a>
+                                </div>
+                            </div>
+                            <div v-if="rules.length == 0" class="df f1 fdr jcc aic">
+                                {{ loading_rules ? '!~~~ Loading Rules ~~~!' : 'No rules added yet' }}
+                            </div>
+                        </div>
+
+                        <!-- rules page end -->
+
+                        <!-- testing tab start -->
+
+                        <div class="dn fdc f1 w-100" :class="{ 'df': isTabActive('Tester') }">
+                            <div class="f1 oya pr">
+                                <div class="pa w-100 h-100">
+                                    <div v-if="isTabActive('Tester')" class="df f1 fdc p-4 oya">
+                                        <table class="w-100">
+                                            <tr>
+                                                <th class="wp-1 wsn tar pr-4">Rule Name :</th>
+                                                <td>
+                                                    <input type="text" class="p-2 w-100" v-model="test_rule_name"
+                                                        placeholder="Enter rule name here" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th class="wsn tar pr-4">URL Regex :</th>
+                                                <td>
+                                                    <input type="text" class="p-2 w-100" v-model="test_url_regex"
+                                                        placeholder="Regex for the URL to match the rule to" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th class="wsn tar pr-4">Test URL :</th>
+                                                <td>
+                                                    <input type="text" class="p-2 w-100" v-model="test_url"
+                                                        placeholder="URL for testing" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th class="wsn tar vat pr-4">Page Type :</th>
+                                                <td>
+                                                    <textarea class="p-2 w-100 hp-200 wsn oyh rn"
+                                                        v-model="test_pagetype_code"
+                                                        placeholder="JavaScript code to determine is the page is TOC or Chapter page&#10;&#10;Return type should be number(int) -&#10;&#10;-2 for Manual-Captcha&#10;-1 for Auto-Captcha&#10; 0 for TOC&#10;&#10;Returning anything else will be treated as UNKNOWN"
+                                                        onfocus="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                                                        oninput="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                                                        spellcheck="false"></textarea>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th class="wsn tar vat pr-4">TOC Script :</th>
+                                                <td>
+                                                    <textarea class="p-2 w-100 hp-200 wsn oyh rn"
+                                                        v-model="test_toc_code"
+                                                        placeholder="JavaScript code to get content from TOC page&#10;&#10;Return type should be JSON & must contain the following JSON nodes -&#10;&#10;{&#10;    'CoverURL': ''              // may be empty&#10;    'Title': 'novel name here',&#10;    'Summary': '',              // may be empty&#10;    'ChapterCount': 1,          // chapter count here&#10;    'ChapterURLs': [            // list of chapter-URLs&#10;        '', // must contain atleast the first chapter URL&#10;        '',&#10;    ],&#10;}&#10;&#10;This object will be passed as 'ndata' to the Ch-Script"
+                                                        onfocus="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                                                        oninput="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                                                        spellcheck="false"></textarea>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th class="wsn tar vat pr-4">Ch-Script :</th>
+                                                <td>
+                                                    <textarea class="p-2 w-100 hp-200 wsn oyh rn"
+                                                        v-model="test_chapter_code"
+                                                        placeholder="JavaScript code to get content from Chapter page.&#10;Can be one or multiple chapters at once.&#10;&#10;Return type should be JSON in the following format -&#10;&#10;[&#10;    {&#10;        'title': '',&#10;        'content': '',&#10;        'nextURL': ''&#10;    },&#10;]&#10;&#10;'nextURL' will be used in case it is non-empty"
+                                                        onfocus="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                                                        oninput="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                                                        spellcheck="false"></textarea>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th class="wsn tar vat pr-4">URL Blocks :</th>
+                                                <td>
+                                                    <textarea class="p-2 w-100 hp-200 wsn oyh rn"
+                                                        v-model="test_url_blocks"
+                                                        placeholder="URLs containg these will be blocked.&#10;Need to be one entry per line.&#10;&#10;Example -&#10;&#10;googleads&#10;adsbygoogle"
+                                                        onfocus="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                                                        oninput="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                                                        spellcheck="false"></textarea>
+                                                </td>
+                                            </tr>
+                                            <tr class="tar">
+                                                <td colspan="2">
+                                                    <a href="#" class="mx-4" :class="{'disabled': iframe_working}"
+                                                        @click="loadTestURL()">LoadURL</a>
+                                                    <a href="#" class="mx-4" :class="{'disabled': iframe_working}"
+                                                        @click="runTestTOCScript()">RunTOCScript</a>
+                                                    <a href="#" class="mx-4" :class="{'disabled': iframe_working}"
+                                                        @click="runTestChapterScript()">RunChapterScript</a>
+                                                    <a href="#" class="mx-4" :class="{'disabled': iframe_working}"
+                                                        @click="resetTestFields()">ResetFields</a>
+                                                    <a href="#" class="mx-4" :class="{'disabled': iframe_working}"
+                                                        @click="saveTestRule()">SaveRule</a>
+                                                    <a v-if="test_rule_guid.length > 0" href="#" class="ml-4"
+                                                        :class="{'disabled': iframe_working}"
+                                                        @click="goBackFromEditRule()">Back</a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="df fdc">
+                                <div class="df fdr p-4 bt fwb">
+                                    <div class="f1">Test Results -</div>
+                                    <a href="#" @click="toggleTestResults">{{ app_options.showTestResults ? 'Collapse' :
+                                        'Expand' }}</a>
+                                </div>
+                                <div class="hp-300 pr bt"
+                                    :class="{'dib': app_options.showTestResults, 'dn': !app_options.showTestResults}">
+                                    <div class="df fdc w-100 h-100">
+                                        <div class="bb p-4">
+                                            Page Type : {{ test_result_page_type }}
+                                        </div>
+                                        <div class="f1 pr">
+                                            <div class="pa p-4 w-100 h-100 oya ust" v-html="test_result_content"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- testing tab end -->
+                    </div>
+                </div>
+
+                <!-- tabs code end -->
+
+                <div class="slide bl w-0" :class="{'df': showRenderer, 'dn': !showRenderer}" slider="1">
+                    &nbsp;
+                </div>
+
+                <!-- renderer code start -->
+
+                <div class="wp-400 fdc" :class="{'df': showRenderer, 'dn': !showRenderer}" slider-targ="1">
+                    <div class="df fdr p-4 bb">
+                        <div class="fwb f1">Renderer</div>
+                        <a href="#" @click="openRendererDevTools()">OpenDevTools</a>
+                    </div>
+                    <div class="pr f1">
+                        <webview id="mainWebView" :src="iframe_url" class="pa w-100 h-100"
+                            :class="{ 'pen': iframe_working }">
+                        </webview>
+                    </div>
+                    <div class="df fdr bt p-4">
+                        <div>URL :</div>
+                        <input class="f1 mx-4" type="text" v-model="rendererCustomUrl">
+                        <a href="#" @click="loadCustomURL()" :class="{ 'disabled': iframe_working }">Go</a>
+                        <a href="#" class="ml-4" @click="loadCustomURL(false)"
+                            :class="{ 'disabled': iframe_working }">Reset</a>
+                    </div>
+                    <div class="df fdr p-4 bt">
+                        <div class="f1">Console</div>
+                        <a v-if="app_options.showConsole" href="#" class="mr-4 pr-4"
+                            @click="clearWebConsole()">Clear</a>
+                        <a href="#" @click="toggleWebConsole()">{{ app_options.showConsole ? 'Hide' : 'Show' }}</a>
+                    </div>
+                    <div class="bt hp-300 pr" :class="{ 'dn': !app_options.showConsole }">
+                        <textarea id="web-console" class="w-100 h-100 rn wsp p-4" readonly></textarea>
+                    </div>
+                </div>
+
+                <!-- renderer code end -->
+            </div>
+        </div>
+
+        <!-- reading mode tab start -->
+
+        <div v-if="r_novel" class="fdc f1 w-100" :class="{'df': reading_mode, 'dn': !reading_mode}">
+            <div class="df fdr fwb p-4 bb">
+                <div class="f1" @click="focusOnReader()">{{ r_novel.Title }}</div>
+                <div v-if="loading_chapters" class="mx-4" :click="focusOnReader()">Loading...[{{
+                    r_chapterIndex_loaded.length
+                    }}/{{
+                    r_novel.ChapterURLs.length }}]
+                </div>
+                <div>({{ r_chapter_index + 1 }}/{{ r_novel.ChapterURLs.length }} - {{
+                    Math.round((((r_chapter_index + 1) * 100 / r_novel.ChapterURLs.length) + Number.EPSILON) * 100) /
+                    100
+                    }}%)</div>
+                <a href="#" class="mx-4" @click="onToggleFullScreenClick()" title="Toggle FullScreen">TFS</a>
+                <a href="#" class="mx-4" @click="toggleDarkMode();focusOnReader()"
+                    :title="'Switch to ' + (app_options.darkMode ? 'Light' : 'Dark') + ' theme'">
+                    {{ app_options.darkMode ? 'LightMode': 'DarkMode' }}</a>
+                <a href="#" class="ml-4" @click="exitReadingMode()" title="Back to Library">Back</a>
+            </div>
+            <div class="df fdr f1">
+                <div v-if="r_show_goto_mode" class="goto-box">
+                    <div class="df fdr p-4 bb bt bl br aic">
+                        <div class="ml-4">Goto Chapter :</div>
+                        <input class="mx-4" id="goto-input" type="number" min="1" :max="r_chapters.length"
+                            v-model="r_goto_offset">
+                    </div>
+                </div>
+                <div class="wp-200 h-100 pr" :class="{'dn': !r_show_sidebar}">
+                    <div class="pa w-100 h-100 df fdc oya br pt-4 pl-4 pr-4" @mouseover="mouseOverChapterList($event)"
+                        @mouseleave="mouseLeaveChapterList()" tabindex="1">
+                        <div v-for="(url,i) in r_novel.ChapterURLs" class="df fdr bt bb bl br mb-4"
+                            :class="{'chapter-active': i == r_chapter_index}">
+                            <a :href="'#' + i" class="dib tdn toe wsn oh w-100 p-4" @click="setReadingChapterIndex(i)">
+                                {{ getChapterName(i) }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="df fdc f1">
+                    <div class="df fdr p-4 bb">
+                        <div class="df fdc f1 novel-chapters">
+                            <a href="#" class="dib tdn toe wsn oh w-100"
+                                @click="toggleReadingModeSidebar();focusOnReader()">
+                                {{ getSelectedChapterName }}
+                            </a>
+                        </div>
+                        <div>
+                            <a href="#" v-if="r_show_options" @click="saveReaderOptions();focusOnReader()">Save
+                                Options</a>
+                            <a href="#" @click="toggleReaderOptions()">{{ r_show_options ? 'Discard' : 'Show' }}
+                                Options</a>
+                        </div>
+                    </div>
+                    <div class="df fdc f1 w-100">
+                        <div class="dn fdc bb" :class="{'df': r_show_options}">
+                            <div class="df fdr p-4">
+                                <div class="fwb mr-4">Styles :</div>
+                                <textarea id="novel-styles-text" class="f1 hp-200 rn"
+                                    placeholder="Enter design code here for chapter view"
+                                    v-model="r_reader_options.r_chapter_styles"></textarea>
+                            </div>
+                            <div class="df fdr p-4 aic">
+                                <div class="fwb mr-4">Show Chapter Numbers :</div>
+                                <input type="checkbox" class="hwp20" v-model="r_reader_options.displayChapterNumbers">
+                            </div>
+                        </div>
+                        <div id="novel-reader-styles" class="dn" v-html="r_reader_options.r_chapter_styles"></div>
+                        <div id="reader-styles" class="f1 pr w-100">
+                            <div id="novel-reader" class="fdc jcc aic f1 pa oya w-100 h-100 p-4" tabindex="0"
+                                :class="{'dib': r_chapterIndex_loaded.includes(r_chapter_index), 'df': !r_chapterIndex_loaded.includes(r_chapter_index)}"
+                                v-html="getSelectedChapterContent" @mouseover="focusOnReader()"></div>
+                            <div class="pa l-0 t-0 h-100 cp df fdc jcc bgct c-invert hover" id="btn-back"
+                                @click="readerPageUpKeyDown()">
+                                &lt;-
+                            </div>
+                            <div class="pa r-6 t-0 h-100 cp df fdc jcc bgct c-invert hover" id="btn-forward"
+                                @click="readerPageDownKeyDown()">
+                                -&gt;
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- reading mode tab end -->
+
+        <div class="fdr p-4 bt" :class="{'df': r_show_sidebar, 'dn': !r_show_sidebar}">
+            <div class="fwb wsn">Status :</div>
+            <div class="wsn pl-4 toe oh">{{ status }}</div>
+        </div>
+
+        <div v-if="isDisplayingUpdateDialog" class="update-box">
+            <div v-if="isAppUpdating" class="bb bt bl br p-4">
+                <div class="m-4 p-4">Downloading update, please wait...</div>
+            </div>
+            <div v-else class="df fdc bb bt bl br p-4">
+                <div class="pb-4">
+                    New update found - {{ newVersionTag }}, wanna download ?
+                </div>
+                <div class="df fdr jcc">
+                    <a href="#" class="mx-4" @click="downloadAppUpdate()">Yaay!</a>
+                    <a href="#" class="mx-4" @click="discardAppUpdate()">Meh...</a>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="updatingRules" class="update-box">
+            <div class="bb bt bl br p-4">
+                <div class="m-4 p-4">Updating rules, please wait...</div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

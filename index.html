@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Novel Downloader v3</title>
+  <link rel="stylesheet" href="./css/index.css" />
+  <script src="./js/vue.min.js"></script>
+  <script src="./js/index.js" defer></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://rsms.me/inter/inter.css">
+</head>
+
+<body>
+  <div id="main" class="dn h-100 w-100 fdc" :class="{ 'df': hasMounted }">
+    <link v-if="app_options.darkMode" rel="stylesheet" href="./css/dark.css" />
+    <div class="f1 fdc w-100" :class="{'df': !reading_mode, 'dn': reading_mode}">
+      <div class="df aic bb fwb">
+        <div class="df fdr f1 h-100 aic">
+          <div class="fdr f1 h-100 aic" :class="{ 'df': showSideBar, 'dn': !showSideBar }">
+            <a href="#" class="df h-100 aic px-8 py-4" :class="{ 'active-tab': app_options.activeTab == i }"
+              v-for="(t, i) in tabs" @click="setActiveTab(i)">{{ t }}</a>
+          </div>
+        </div>
+        <div class="df aic p-4">
+          <a href="#" class="" :class="{ 'disabled': checkingForUpdates }" @click="checkForAppUpdates()"
+            title="Update Fanfiction-Manager">
+
+            <span class="">
+              <button type="button" @click="enterReadingMode(n)"
+                class="inline-flex border-black items-center rounded-md border border-transparent bg-lime-600 px-4 py-2 text-sm font-medium text-black shadow-sm hover:bg-lime-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-moon"
+                  viewBox="0 0 16 16">
+                  <path
+                    d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278zM4.858 1.311A7.269 7.269 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.316 7.316 0 0 0 5.205-2.162c-.337.042-.68.063-1.029.063-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286z" />
+                </svg>&nbsp;
+                {{ checkingForUpdates ? 'Checking for Updates...' : 'Update' }}
+              </button>
+            </span></a>
+          <a href="#" class="" @click="onToggleFullScreenClick()" title="Toggle FullScreen">
+            <span class="sm:ml-3">
+              <button type="button" @click="enterReadingMode(n)"
+                class="inline-flex items-center rounded-md border border-transparent bg-white-400 px-4 py-2 text-sm font-medium text-black shadow-sm hover:bg-white-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                <!-- <svg width="24" height="24" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M12 21V7C12 5.89543 12.8954 5 14 5H21.4C21.7314 5 22 5.26863 22 5.6V18.7143" stroke="currentColor" stroke-linecap="round"/> <path d="M12 21V7C12 5.89543 11.1046 5 10 5H2.6C2.26863 5 2 5.26863 2 5.6V18.7143" stroke="currentColor" stroke-linecap="round"/> <path d="M14 19L22 19" stroke="currentColor" stroke-linecap="round"/> <path d="M10 19L2 19" stroke="currentColor" stroke-linecap="round"/> <path d="M12 21C12 19.8954 12.8954 19 14 19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/> <path d="M12 21C12 19.8954 11.1046 19 10 19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/> </svg>&nbsp; -->
+                Toggle Full Screen
+              </button>
+            </span>
+          </a>
+          <a href="#" class="" @click="toggleDarkMode()"
+            :title="'Switch to ' + (app_options.darkMode ? 'Light' : 'Dark') + ' theme'">
+            <span class="">
+              <button type="button" @click="enterReadingMode(n)"
+                class="inline-flex items-center rounded-md border border-transparent bg-white-600 px-4 py-2 text-sm font-medium text-black shadow-sm hover:bg-white-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-moon"
+                  viewBox="0 0 16 16">
+                  <path
+                    d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278zM4.858 1.311A7.269 7.269 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.316 7.316 0 0 0 5.205-2.162c-.337.042-.68.063-1.029.063-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286z" />
+                </svg>&nbsp;
+                {{ app_options.darkMode ? 'Light Mode': 'Dark Mode' }}
+              </button>
+            </span></a>
+          <!-- <a v-if="isTabActive('Rules')" href="#" class="ml-8" :class="{'disabled': iframe_working}"
+            @click="updateRules()">{{ updatingRules ? 'Updating rules...' : 'Update Rules' }}</a>
+          <div v-if="!isTabActive('Rules')" class="df fdr aic ml-8">
+            <input type="checkbox" v-model="app_options.showWebPage" class="hwp20" />
+            <a href="#" @click="toggleRenderer()">Renderer</a>
+          </div> -->
+        </div>
+      </div>
+      <div class="df f1 fdr">
+
+        <!-- tabs code start -->
+
+        <div class="df fdc f1 oya pr">
+
+          <div class="df fdc h-100 w-100 pa">
+            <!-- library part start -->
+
+            <div class="dn fdc f1 w-100" :class="{ 'df' : isTabActive('Library') }">
+              <div class="df f1 fdc pr">
+
+                <!-- Novels List Start -->
+
+                <!-- <div class="df f1 pa w-100 h-100 oya p-4"
+                  :class="{ 'lib-list': !app_options.showGridLayout, 'lib-thumbnail': app_options.showGridLayout }">
+                  <div v-for="n in novels" class="m-8 bt bb bl br dn fdr p-8" :class="{
+                        'detailing': isDetailingMode(n), 
+                        'new-updates': n.ChapterCount > n.DownloadedCount,
+                        'downloading': n == d_novel,
+                        'updating': n == u_novel,
+                        'novel-summary-expanded': summaryExpandedGUID == n.GUID,
+                        'df': ((app_options.showNewOnly ? n.DownloadedCount < n.ChapterCount || n.ChapterCount <= 0 : true) && 
+                                (app_options.showCheckUpdatedOnly ? n.CheckUpdates : true)
+                              )
+                      }">
+                      
+                    <div class="df pr-8 br pr cover-image">
+                      <div class="df fdc pr">
+                        <img class="bb bt bl br" :src="n.CoverURL" alt="Image Not Found">
+                      </div>
+                    </div>
+                    <div class="f1 df fdc w-100 pl-8">
+                      <div>
+                        <span v-html="n.Title" class="fwb"></span> ({{ n.DownloadedCount }}/{{ n.ChapterCount }})
+                      </div>
+                      <div class="f1 bt mt-8 pt-8 pr">
+                        <div :class="{'dn': !n.Summary, 'summary-shrunk': summaryExpandedGUID != n.GUID}"
+                          v-html="n.Summary">
+                        </div>
+                      </div>
+                      <div class="bt mt-8 pt-8 df fdr fww jcsb">
+                        <div>
+                          <a v-if="n.Summary" href="#" @click="setSummaryGUID(n.GUID)">{{ summaryExpandedGUID ==
+                            n.GUID ? 'Shrink' :
+                            'Expand' }}</a>
+                        </div>
+                        <div class="f1 df fdr jce fww">
+                          <a href="#" class="ml-4" @click="enterReadingMode(n)">Read</a>
+                          <a href="#" class="ml-4" :class="{'disabled': iframe_working}"
+                            @click="viewNovelDetails(n)">Details</a>
+                          <a href="#" class="ml-4"
+                            :class="{'disabled': iframe_working || isDetailingMode(n), 'dn': !n.CheckUpdates || n == d_novel}"
+                            @click="updateNovel(n)">{{ u_novel == n ? 'Updating' : 'Update' }}</a>
+                          <a href="#" class="ml-4" :class="{
+                                'disabled': iframe_working || isDetailingMode(n),
+                                 'dn': n.ChapterCount <= n.DownloadedCount || n == d_novel
+                                }" @click="downloadNovel(n)">Download</a>
+                          <a href="#" v-if="n == d_novel" class="cr ml-4"
+                            :class="{'disabled': stop_download_update_novel}" @click="stopDownloadNovel()">{{
+                            stop_download_update_novel ? 'Stopping' : 'Stop' }}</a>
+                          <a href="#" class="ml-4" :class="{'disabled': iframe_working || isDetailingMode(n)}"
+                            @click="deleteNovel($event,n)">Delete</a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div> -->
+                <div class="bg-white p-8" style="min-height: 384px">
+                  <div class="mx-auto max-w-7xl" v-for="n in novels">
+                    <hr><br>
+                    <div class="lg:flex lg:items-center lg:justify-between">
+                      <div class=" pr-8 cover-image">
+                        <div class="">
+                          <img class="bb bt bl br" :src="n.CoverURL" alt="Image Not Found">
+                        </div>
+                      </div>
+                      <div class="min-w-0 flex-1">
+
+                        <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight"
+                          ><div v-html="n.Title"></div>
+                          <!-- <div v-if="n."><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"/></svg></div> -->
+                        </h2><br>
+                        <div v-html="n.Summary"></div>
+                      </div>
+                      <div class="mt-5 flex lg:mt-0 lg:ml-4">
+                        <!-- <span class="hidden sm:block">
+                          <button type="button"
+                            class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" x-description="Heroicon name: mini/pencil"
+                              xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                              aria-hidden="true">
+                              <path
+                                d="M2.695 14.763l-1.262 3.154a.5.5 0 00.65.65l3.155-1.262a4 4 0 001.343-.885L17.5 5.5a2.121 2.121 0 00-3-3L3.58 13.42a4 4 0 00-.885 1.343z">
+                              </path>
+                            </svg>
+                            Edit
+                          </button>
+                        </span> -->
+
+                        <!-- <span class="ml-3 hidden sm:block">
+                          <button type="button" :class="{'disabled': iframe_working}" @click="viewNovelDetails(n)"
+                            class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            <svg class="-ml-1 mr-2 h-5 w-5 text-gray-500" x-description="Heroicon name: mini/link"
+                              xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+                              aria-hidden="true">
+                              <path
+                                d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.667l3-3z">
+                              </path>
+                              <path
+                                d="M11.603 7.963a.75.75 0 00-.977 1.138 2.5 2.5 0 01.142 3.667l-3 3a2.5 2.5 0 01-3.536-3.536l1.225-1.224a.75.75 0 00-1.061-1.06l-1.224 1.224a4 4 0 105.656 5.656l3-3a4 4 0 00-.225-5.865z">
+                              </path>
+                            </svg>
+                            Details
+                          </button>
+                        </span> -->
+
+                        <span class="sm:ml-3">
+                          <button type="button" @click="enterReadingMode(n)"
+                            class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            <svg width="24" height="24" stroke-width="1.5" viewBox="0 0 24 24" fill="none"
+                              xmlns="http://www.w3.org/2000/svg">
+                              <path d="M12 21V7C12 5.89543 12.8954 5 14 5H21.4C21.7314 5 22 5.26863 22 5.6V18.7143"
+                                stroke="currentColor" stroke-linecap="round" />
+                              <path d="M12 21V7C12 5.89543 11.1046 5 10 5H2.6C2.26863 5 2 5.26863 2 5.6V18.7143"
+                                stroke="currentColor" stroke-linecap="round" />
+                              <path d="M14 19L22 19" stroke="currentColor" stroke-linecap="round" />
+                              <path d="M10 19L2 19" stroke="currentColor" stroke-linecap="round" />
+                              <path d="M12 21C12 19.8954 12.8954 19 14 19" stroke="currentColor" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                              <path d="M12 21C12 19.8954 11.1046 19 10 19" stroke="currentColor" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                            </svg>&nbsp;
+                            Read
+                          </button>
+                        </span>
+                      </div>
+                    </div>
+                    <br>
+                    <hr><br>
+                  </div>
+
+                </div>
+
+                <!-- Novels List End -->
+
+                <!-- No Novels Added Start -->
+
+                <div v-if="getNovels.length == 0" class="df fdr h-100 w-100 jcc aic zi-1">
+                  !~~~ {{loading_novels ?
+                  'Loading Novels' :
+                  (
+                  this.novels.length > 0 ?
+                  'No novels for the filters applied' :
+                  'No novels added yet'
+                  )
+                  }} ~~~!
+                </div>
+
+                <!-- No Novels Added End -->
+
+              </div>
+
+              <!-- Novel Details Start -->
+
+              <div v-if="detailing_novel" class="df fdc hp-300">
+                <div class="df fdr bt p-4">
+                  <div class="f1">Details</div>
+                  <a href="#" @click="saveCloseNovelDetails()" class="mx-8">Save&Close</a>
+                  <a href="#" @click="discardNovelDetailsChanges()" class="ml-8">Discard</a>
+                </div>
+                <div class="f1 bt pr">
+                  <div class="df fdc pa w-100 h-100 oya">
+                    <table class="w-100 p-4">
+                      <tr>
+                        <td class="wp-1">URL</td>
+                        <td>
+                          <input type="text" v-model="detailing_novel.URL" class="w-100">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="wp-1">CoverURL</td>
+                        <td>
+                          <input type="text" v-model="detailing_novel.CoverURL" class="w-100">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="wp-1">Title</td>
+                        <td>
+                          <input type="text" v-model="detailing_novel.Title" class="w-100">
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="wp-1 vat pt-4">Summary</td>
+                        <td>
+                          <textarea v-model="detailing_novel.Summary" class="w-100 hp-100 rn"></textarea>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="wp-1 vat pt-4">CheckUpdates</td>
+                        <td>
+                          <input type="checkbox" v-model="detailing_novel.CheckUpdates" class="hwp20" />
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Novel Details End -->
+
+              <!-- Library Filters / Commands Start -->
+
+
+
+              <!-- Library Filters / Commands End -->
+
+              <!-- Add Novel Start -->
+
+
+
+              <!-- Add Novel End -->
+
+            </div>
+
+            <!-- library part end -->
+
+            <!-- Search tab start -->
+            <div class="fdc" :class="{ 'df' : isTabActive('Search') }">
+              <br>
+              <form>
+                <label for="default-search"
+                  class="mb-2 text-sm font-medium text-black-900 sr-only dark:text-white">Search</label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg aria-hidden="true" class="w-5 h-5 text-white-500 dark:text-gray-400" fill="none"
+                      stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                  </div>
+                  <input v-model="search_query" type="search" id="default-search"
+                    class="block w-full p-4 pl-10 text-sm text-black-900 border border-black-300 rounded-lg bg-white-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-white-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-black dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                    placeholder="Enter Fanfiction URL..." required>
+                  <button
+                    class="text-white absolute right-2.5 bottom-2.5 bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                    :class="{'disabled': iframe_working}" @click.prevent="search()">Load</button>
+                </div>
+              </form>
+              <div id="searchRes">
+                <div class="mx-auto max-w-7xl" v-for="s in search_results">
+                  <hr><br>
+                  <div class="lg:flex lg:items-center lg:justify-between">
+                    <div class=" pr-8 cover-image">
+                      <div class="">
+                        <img class="bb bt bl br" src="n.CoverURL" alt="Image Not Found">
+                      </div>
+                    </div>
+                    <div class="min-w-0 flex-1">
+
+                      <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight"
+                        v-html="s.title">
+
+                      </h2><br>
+                      <div v-html="s.summary"></div>
+                    </div>
+                    <div class="mt-5 flex lg:mt-0 lg:ml-4">
+
+                      <span class="sm:ml-3">
+                        <button type="button" @click="addNewNovelAO3(s.id)"
+                          class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                          <svg width="24" height="24" stroke-width="1.5" viewBox="0 0 24 24" fill="none"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 21V7C12 5.89543 12.8954 5 14 5H21.4C21.7314 5 22 5.26863 22 5.6V18.7143"
+                              stroke="currentColor" stroke-linecap="round" />
+                            <path d="M12 21V7C12 5.89543 11.1046 5 10 5H2.6C2.26863 5 2 5.26863 2 5.6V18.7143"
+                              stroke="currentColor" stroke-linecap="round" />
+                            <path d="M14 19L22 19" stroke="currentColor" stroke-linecap="round" />
+                            <path d="M10 19L2 19" stroke="currentColor" stroke-linecap="round" />
+                            <path d="M12 21C12 19.8954 12.8954 19 14 19" stroke="currentColor" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                            <path d="M12 21C12 19.8954 11.1046 19 10 19" stroke="currentColor" stroke-linecap="round"
+                              stroke-linejoin="round" />
+                          </svg>&nbsp;
+                          Read
+                        </button>
+                      </span>
+                    </div>
+                  </div>
+                  <br>
+                  <hr><br>
+                </div>
+              </div>
+
+              <!-- rules page start -->
+
+              <div class="dn fdc f1 w-100" :class="{ 'df': isTabActive('Rules') }">
+                <div v-for="r in rules" class="df fdr p-4 m-4 bt bl br bb">
+                  <div class="df fdr f1">
+                    <div class="pr-4">{{ r.rule_name }} -></div>
+                    <div class="df fdr f1 mr-10 pr">
+                      <div class="f1 pa w-100 h-100 wsn toe oh">
+                        {{ r.url_regex }}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <a href="#" :class="{'disabled': iframe_working}" @click="editRule(r)">Edit</a>
+                    <a href="#" :class="{'disabled': iframe_working}" @click="deleteRule($event, r)">Delete</a>
+                  </div>
+                </div>
+                <div v-if="rules.length == 0" class="df f1 fdr jcc aic">
+                  {{ loading_rules ? '!~~~ Loading Rules ~~~!' : 'No rules added yet' }}
+                </div>
+              </div>
+
+              <!-- rules page end -->
+
+              <!-- testing tab start -->
+
+              <div class="dn fdc f1 w-100" :class="{ 'df': isTabActive('Tester') }">
+                <div class="f1 oya pr">
+                  <div class="pa w-100 h-100">
+                    <div v-if="isTabActive('Tester')" class="df f1 fdc p-4 oya">
+                      <table class="w-100">
+                        <tr>
+                          <th class="wp-1 wsn tar pr-4">Rule Name :</th>
+                          <td>
+                            <input type="text" class="p-2 w-100" v-model="test_rule_name"
+                              placeholder="Enter rule name here" />
+                          </td>
+                        </tr>
+                        <tr>
+                          <th class="wsn tar pr-4">URL Regex :</th>
+                          <td>
+                            <input type="text" class="p-2 w-100" v-model="test_url_regex"
+                              placeholder="Regex for the URL to match the rule to" />
+                          </td>
+                        </tr>
+                        <tr>
+                          <th class="wsn tar pr-4">Test URL :</th>
+                          <td>
+                            <input type="text" class="p-2 w-100" v-model="test_url" placeholder="URL for testing" />
+                          </td>
+                        </tr>
+                        <tr>
+                          <th class="wsn tar vat pr-4">Page Type :</th>
+                          <td>
+                            <textarea class="p-2 w-100 hp-200 wsn oyh rn" v-model="test_pagetype_code"
+                              placeholder="JavaScript code to determine is the page is TOC or Chapter page&#10;&#10;Return type should be number(int) -&#10;&#10;-2 for Manual-Captcha&#10;-1 for Auto-Captcha&#10; 0 for TOC&#10;&#10;Returning anything else will be treated as UNKNOWN"
+                              onfocus="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                              oninput="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                              spellcheck="false"></textarea>
+                          </td>
+                        </tr>
+                        <tr>
+                          <th class="wsn tar vat pr-4">TOC Script :</th>
+                          <td>
+                            <textarea class="p-2 w-100 hp-200 wsn oyh rn" v-model="test_toc_code"
+                              placeholder="JavaScript code to get content from TOC page&#10;&#10;Return type should be JSON & must contain the following JSON nodes -&#10;&#10;{&#10;    'CoverURL': ''              // may be empty&#10;    'Title': 'novel name here',&#10;    'Summary': '',              // may be empty&#10;    'ChapterCount': 1,          // chapter count here&#10;    'ChapterURLs': [            // list of chapter-URLs&#10;        '', // must contain atleast the first chapter URL&#10;        '',&#10;    ],&#10;}&#10;&#10;This object will be passed as 'ndata' to the Ch-Script"
+                              onfocus="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                              oninput="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                              spellcheck="false"></textarea>
+                          </td>
+                        </tr>
+                        <tr>
+                          <th class="wsn tar vat pr-4">Ch-Script :</th>
+                          <td>
+                            <textarea class="p-2 w-100 hp-200 wsn oyh rn" v-model="test_chapter_code"
+                              placeholder="JavaScript code to get content from Chapter page.&#10;Can be one or multiple chapters at once.&#10;&#10;Return type should be JSON in the following format -&#10;&#10;[&#10;    {&#10;        'title': '',&#10;        'content': '',&#10;        'nextURL': ''&#10;    },&#10;]&#10;&#10;'nextURL' will be used in case it is non-empty"
+                              onfocus="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                              oninput="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                              spellcheck="false"></textarea>
+                          </td>
+                        </tr>
+                        <tr>
+                          <th class="wsn tar vat pr-4">URL Blocks :</th>
+                          <td>
+                            <textarea class="p-2 w-100 hp-200 wsn oyh rn" v-model="test_url_blocks"
+                              placeholder="URLs containg these will be blocked.&#10;Need to be one entry per line.&#10;&#10;Example -&#10;&#10;googleads&#10;adsbygoogle"
+                              onfocus="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                              oninput="this.style.height = '';this.style.height = this.scrollHeight + 15 + 'px';"
+                              spellcheck="false"></textarea>
+                          </td>
+                        </tr>
+                        <tr class="tar">
+                          <td colspan="2">
+                            <a href="#" class="mx-4" :class="{'disabled': iframe_working}"
+                              @click="loadTestURL()">LoadURL</a>
+                            <a href="#" class="mx-4" :class="{'disabled': iframe_working}"
+                              @click="runTestTOCScript()">RunTOCScript</a>
+                            <a href="#" class="mx-4" :class="{'disabled': iframe_working}"
+                              @click="runTestChapterScript()">RunChapterScript</a>
+                            <a href="#" class="mx-4" :class="{'disabled': iframe_working}"
+                              @click="resetTestFields()">ResetFields</a>
+                            <a href="#" class="mx-4" :class="{'disabled': iframe_working}"
+                              @click="saveTestRule()">SaveRule</a>
+                            <a v-if="test_rule_guid.length > 0" href="#" class="ml-4"
+                              :class="{'disabled': iframe_working}" @click="goBackFromEditRule()">Back</a>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="df fdc">
+                  <div class="df fdr p-4 bt fwb">
+                    <div class="f1">Test Results -</div>
+                    <a href="#" @click="toggleTestResults">{{ app_options.showTestResults ? 'Collapse' : 'Expand' }}</a>
+                  </div>
+                  <div class="hp-300 pr bt"
+                    :class="{'dib': app_options.showTestResults, 'dn': !app_options.showTestResults}">
+                    <div class="df fdc w-100 h-100">
+                      <div class="bb p-4">
+                        Page Type : {{ test_result_page_type }}
+                      </div>
+                      <div class="f1 pr">
+                        <div class="pa p-4 w-100 h-100 oya ust" v-html="test_result_content"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- testing tab end -->
+            </div>
+          </div>
+
+          <!-- tabs code end -->
+
+          <div class="slide bl w-0" :class="{'df': showRenderer, 'dn': !showRenderer}" slider="1">
+            &nbsp;
+          </div>
+
+          <!-- renderer code start -->
+
+          <div class="wp-400 fdc" :class="{'df': showRenderer, 'dn': !showRenderer}" slider-targ="1">
+            <div class="df fdr p-4 bb">
+              <div class="fwb f1">Renderer</div>
+              <a href="#" @click="openRendererDevTools()">OpenDevTools</a>
+            </div>
+            <div class="pr f1">
+              <webview id="mainWebView" :src="iframe_url" class="pa w-100 h-100" :class="{ 'pen': iframe_working }">
+              </webview>
+            </div>
+            <div class="df fdr bt p-4">
+              <div>URL :</div>
+              <input class="f1 mx-4" type="text" v-model="rendererCustomUrl">
+              <a href="#" @click="loadCustomURL()" :class="{ 'disabled': iframe_working }">Go</a>
+              <a href="#" class="ml-4" @click="loadCustomURL(false)" :class="{ 'disabled': iframe_working }">Reset</a>
+            </div>
+            <div class="df fdr p-4 bt">
+              <div class="f1">Console</div>
+              <a v-if="app_options.showConsole" href="#" class="mr-4 pr-4" @click="clearWebConsole()">Clear</a>
+              <a href="#" @click="toggleWebConsole()">{{ app_options.showConsole ? 'Hide' : 'Show' }}</a>
+            </div>
+            <div class="bt hp-300 pr" :class="{ 'dn': !app_options.showConsole }">
+              <textarea id="web-console" class="w-100 h-100 rn wsp p-4" readonly></textarea>
+            </div>
+          </div>
+
+          <!-- renderer code end -->
+        </div>
+      </div>
+      </div>
+      <!-- reading mode tab start -->
+      <!-- Hehe -->
+      <div v-if="r_novel" class="fdc f1 w-100" :class="{'df': reading_mode, 'dn': !reading_mode}">
+        <div class="df fdr fwb p-4 bb">
+          <div class="f1" @click="focusOnReader()">{{ r_novel.Title }}</div>
+          <div v-if="loading_chapters" class="mx-4" :click="focusOnReader()">Loading...[{{ r_chapterIndex_loaded.length
+            }}/{{
+            r_novel.ChapterURLs.length }}]
+          </div>
+          <!-- <div><span class="sm:ml-3">({{ r_chapter_index + 1 }}/{{ r_novel.ChapterURLs.length }} - {{
+          Math.round((((r_chapter_index + 1) * 100 / r_novel.ChapterURLs.length) + Number.EPSILON) * 100) / 100
+          }}%)</span></div> -->
+          <a href="#" class="mx-4" @click="onToggleFullScreenClick()" title="Toggle FullScreen">
+            <span class="sm:ml-3">
+              <button type="button"
+                class="inline-flex items-center rounded-md border border-transparent bg-white-600 px-4 py-2 text-sm font-medium text-black shadow-sm hover:bg-white-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                <!-- <svg width="24" height="24" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M12 21V7C12 5.89543 12.8954 5 14 5H21.4C21.7314 5 22 5.26863 22 5.6V18.7143" stroke="currentColor" stroke-linecap="round"/> <path d="M12 21V7C12 5.89543 11.1046 5 10 5H2.6C2.26863 5 2 5.26863 2 5.6V18.7143" stroke="currentColor" stroke-linecap="round"/> <path d="M14 19L22 19" stroke="currentColor" stroke-linecap="round"/> <path d="M10 19L2 19" stroke="currentColor" stroke-linecap="round"/> <path d="M12 21C12 19.8954 12.8954 19 14 19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/> <path d="M12 21C12 19.8954 11.1046 19 10 19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/> </svg>&nbsp; -->
+                Toggle Full Screen
+              </button>
+            </span>
+          </a>
+          <a href="#" class="" @click="toggleDarkMode();focusOnReader()"
+            :title="'Switch to ' + (app_options.darkMode ? 'Light' : 'Dark') + ' theme'">
+
+            <span class="">
+              <button type="button"
+                class="inline-flex items-center rounded-md border border-transparent bg-white-600 px-4 py-2 text-sm font-medium text-black shadow-sm hover:bg-white-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-moon"
+                  viewBox="0 0 16 16">
+                  <path
+                    d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278zM4.858 1.311A7.269 7.269 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.316 7.316 0 0 0 5.205-2.162c-.337.042-.68.063-1.029.063-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286z" />
+                </svg>&nbsp;
+                {{ app_options.darkMode ? 'Light Mode': 'Dark Mode' }}
+              </button>
+            </span></a>
+          <!-- <label class=" relative  cursor-pointer">
+            <input type="checkbox" value="" class="sr-only peer">
+            <div
+              class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600">
+            </div>
+            <span class="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Darkmode</span>
+          </label> -->
+          <a href="#" class="ml-4" @click="exitReadingMode()" title="Back to Library"><span class="">
+              <button type="button"
+                class="inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                <svg width="24" height="24" stroke-width="1.5" viewBox="0 0 24 24" fill="none"
+                  xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 21V7C12 5.89543 12.8954 5 14 5H21.4C21.7314 5 22 5.26863 22 5.6V18.7143"
+                    stroke="currentColor" stroke-linecap="round" />
+                  <path d="M12 21V7C12 5.89543 11.1046 5 10 5H2.6C2.26863 5 2 5.26863 2 5.6V18.7143"
+                    stroke="currentColor" stroke-linecap="round" />
+                  <path d="M14 19L22 19" stroke="currentColor" stroke-linecap="round" />
+                  <path d="M10 19L2 19" stroke="currentColor" stroke-linecap="round" />
+                  <path d="M12 21C12 19.8954 12.8954 19 14 19" stroke="currentColor" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                  <path d="M12 21C12 19.8954 11.1046 19 10 19" stroke="currentColor" stroke-linecap="round"
+                    stroke-linejoin="round" />
+                </svg>&nbsp;
+                Back to Library
+              </button>
+            </span></a>
+        </div>
+        <div class="df fdr f1">
+          <div v-if="r_show_goto_mode" class="goto-box">
+            <div class="df fdr p-4 bb bt bl br aic">
+              <div class="ml-4">Goto Chapter :</div>
+              <input class="mx-4" id="goto-input" type="number" min="1" :max="r_chapters.length"
+                v-model="r_goto_offset">
+            </div>
+          </div>
+          <div class="wp-200 h-100 pr" :class="{'dn': !r_show_sidebar}">
+            <div class="pa w-100 h-100 df fdc oya br pt-4 pl-4 pr-4" @mouseover="mouseOverChapterList($event)"
+              @mouseleave="mouseLeaveChapterList()" tabindex="1">
+              <div v-for="(url,i) in r_novel.ChapterURLs" class="df fdr bt bb bl br mb-4"
+                :class="{'chapter-active': i == r_chapter_index}">
+                <a :href="'#' + i" class="dib tdn toe wsn oh w-100 p-4" @click="setReadingChapterIndex(i)">
+                  {{ getChapterName(i) }}
+                </a>
+              </div>
+            </div>
+          </div>
+          <div class="df fdc f1">
+            <div class="df fdr p-4 bb">
+              <div class="df fdc f1 novel-chapters">
+                <a href="#" class="dib tdn toe wsn oh w-100" @click="toggleReadingModeSidebar();focusOnReader()">
+                  {{ getSelectedChapterName }}
+                </a>
+              </div>
+              <div>
+                <a href="#" v-if="r_show_options" @click="saveReaderOptions();focusOnReader()">
+                  <span class="sm:ml-3">
+                    <button type="button"
+                      class="inline-flex items-center rounded-md border border-transparent bg-green-400 px-4 py-2 text-sm font-medium text-black shadow-sm hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                      <!-- <svg width="24" height="24" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M12 21V7C12 5.89543 12.8954 5 14 5H21.4C21.7314 5 22 5.26863 22 5.6V18.7143" stroke="currentColor" stroke-linecap="round"/> <path d="M12 21V7C12 5.89543 11.1046 5 10 5H2.6C2.26863 5 2 5.26863 2 5.6V18.7143" stroke="currentColor" stroke-linecap="round"/> <path d="M14 19L22 19" stroke="currentColor" stroke-linecap="round"/> <path d="M10 19L2 19" stroke="currentColor" stroke-linecap="round"/> <path d="M12 21C12 19.8954 12.8954 19 14 19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/> <path d="M12 21C12 19.8954 11.1046 19 10 19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/> </svg>&nbsp; -->
+                      Save Options
+                    </button>
+                  </span>
+                </a>
+                <a href="#" @click="toggleReaderOptions()">
+                  <span class="sm:ml-3">
+                    <button type="button"
+                      class="inline-flex items-center rounded-md border border-transparent bg-white-600 px-4 py-2 text-sm font-medium text-black shadow-sm hover:bg-white-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                      <!-- <svg width="24" height="24" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M12 21V7C12 5.89543 12.8954 5 14 5H21.4C21.7314 5 22 5.26863 22 5.6V18.7143" stroke="currentColor" stroke-linecap="round"/> <path d="M12 21V7C12 5.89543 11.1046 5 10 5H2.6C2.26863 5 2 5.26863 2 5.6V18.7143" stroke="currentColor" stroke-linecap="round"/> <path d="M14 19L22 19" stroke="currentColor" stroke-linecap="round"/> <path d="M10 19L2 19" stroke="currentColor" stroke-linecap="round"/> <path d="M12 21C12 19.8954 12.8954 19 14 19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/> <path d="M12 21C12 19.8954 11.1046 19 10 19" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"/> </svg>&nbsp; -->
+                      {{ r_show_options ? 'Discard' : 'Show' }}
+                      Options
+                    </button>
+                  </span></a>
+              </div>
+            </div>
+            <div class="df fdc f1 w-100">
+              <div class="dn fdc bb" :class="{'df': r_show_options}">
+                <div class="df fdr p-4">
+                  <div class="fwb mr-4">Styles :</div>
+                  <textarea id="novel-styles-text" class="f1 hp-200 rn"
+                    placeholder="Enter design code here for chapter view"
+                    v-model="r_reader_options.r_chapter_styles"></textarea>
+                </div>
+                <div class="df fdr p-4 aic">
+                  <div class="fwb mr-4">Show Chapter Numbers :</div>
+                  <input type="checkbox" class="hwp20" v-model="r_reader_options.displayChapterNumbers">
+                </div>
+              </div>
+              <div id="novel-reader-styles" class="dn" v-html="r_reader_options.r_chapter_styles"></div>
+              <div id="reader-styles" class="f1 pr w-100">
+                <div id="novel-reader" class="fdc jcc aic f1 pa oya w-100 h-100 p-4" tabindex="0"
+                  :class="{'dib': r_chapterIndex_loaded.includes(r_chapter_index), 'df': !r_chapterIndex_loaded.includes(r_chapter_index)}"
+                  v-html="getSelectedChapterContent" @mouseover="focusOnReader()"></div>
+                <div class="pa l-0 t-0 h-100 cp df fdc jcc bgct c-invert hover" id="btn-back"
+                  @click="readerPageUpKeyDown()">
+                  &lt;-
+                </div>
+                <div class="pa r-6 t-0 h-100 cp df fdc jcc bgct c-invert hover" id="btn-forward"
+                  @click="readerPageDownKeyDown()">
+                  -&gt;
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- reading mode tab end -->
+      <div class="df bt fdr aic p-4">
+        <div class="mr-4">URL :</div>
+        <input class="f1 mr-4" type="text" v-model="add_novel_url"
+          placeholder="Enter the target URL of Novel-page here">
+        <a href="#" :class="{'disabled': iframe_working}" @click="addNewNovel()">Load URL</a>
+      </div>
+
+      <!-- <div class="df fdr jcsb aic p-4 bt">
+      <div class="df fdr aic">
+        <a href="#" @click="onToggleLibraryViewStyle()">
+          {{ app_options.showGridLayout ? 'ListView' : 'GridView' }}</a>
+        <input type="checkbox" class="hwp20 dib ml-8 cp" v-model="app_options.showNewOnly">
+        <a href="#" @click="toggleNewOnly()">NewOnly</a>
+        <input type="checkbox" class="hwp20 dib ml-8 cp" v-model="app_options.showCheckUpdatedOnly">
+        <a href="#" @click="toggleCheckUpdatedOnly()">UpdatedOnly</a>
+      </div>
+      <div class="df fdr aic">
+        <a href="#" v-show="update_all_list.length <= 0" :class="{ 'disabled': iframe_working }"
+          @click="updateDownloadAll()">UpdateDownloadAll</a>
+        <a href="#" v-show="update_all_list.length > 0"
+          :class="{ 'cr': !stop_download_update_novel, 'disabled': stop_download_update_novel }"
+          @click="stopDownloadAllNovel()">{{ stop_download_update_novel ? 'Stopping' : 'Stop'}}</a>
+      </div>
+    </div> -->
+      <div class="fdr bt" :class="{'df': r_show_sidebar, 'dn': !r_show_sidebar}">
+        <div class="fwb wsn">Status :</div>
+        <div class="wsn pl-4 toe oh">{{ status }}</div>
+      </div>
+
+      <!-- <div v-if="isDisplayingUpdateDialog" class="update-box">
+        <div v-if="isAppUpdating" class="bb bt bl br p-4">
+          <div class="m-4 p-4">Downloading update, please wait...</div>
+        </div>
+        <div v-else class="df fdc bb bt bl br p-4">
+          <div class="pb-4">
+            New update found - {{ newVersionTag }}, wanna download ?
+          </div>
+          <div class="df fdr jcc">
+            <a href="#" class="mx-4" @click="downloadAppUpdate()">Yaay!</a>
+            <a href="#" class="mx-4" @click="discardAppUpdate()">Meh...</a>
+          </div>
+        </div>
+      </div> -->
+
+      <div v-if="updatingRules" class="update-box">
+        <div class="bb bt bl br p-4">
+          <div class="m-4 p-4">Updating rules, please wait...</div>
+        </div>
+      </div>
+    </div>
+</body>
+
+</html>
